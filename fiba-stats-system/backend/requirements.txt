@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic-settings
+python-multipart
+websockets
+jinja2
+python-dotenv
+pyinstaller

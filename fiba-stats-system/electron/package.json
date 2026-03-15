@@ -1,0 +1,62 @@
+{
+  "name": "fiba-stats-electron",
+  "version": "1.0.0",
+  "description": "FIBA Stats System - Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^40.6.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.fiba.stats",
+    "productName": "FIBA Stats System",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Sports"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "icon.ico"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/dist",
+        "to": "frontend/dist"
+      },
+      {
+        "from": "../backend/dist/backend",
+        "to": "backend"
+      },
+      {
+        "from": "../backend/.env",
+        "to": "backend/.env"
+      },
+      {
+        "from": "../backend/fiba_stats.db",
+        "to": "backend/fiba_stats.db"
+      }
+    ]
+  }
+}

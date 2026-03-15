@@ -1,0 +1,48 @@
+# Node
+node_modules/
+dist/
+dist-native/
+build/
+.npm
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.lucid
+.cache
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+fiba-stats-system/electron/dist/
+fiba-stats-system/electron/release/
+fiba-stats-system/frontend/dist/
+fiba-stats-system/backend/venv/

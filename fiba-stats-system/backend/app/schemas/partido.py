@@ -1,0 +1,44 @@
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+from app.models.partido import EstadoPartido
+
+class PartidoBase(BaseModel):
+    local_id: int
+    visitante_id: int
+    competicion: Optional[str] = None
+    cancha: Optional[str] = None
+    arbitro_principal: Optional[str] = None
+    arbitro_asistente1: Optional[str] = None
+    arbitro_asistente2: Optional[str] = None
+
+class PartidoCreate(PartidoBase):
+    pass
+
+class EquipoMin(BaseModel):
+    nombre: str
+    abrev: Optional[str]
+    color_principal: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+class PartidoRead(BaseModel):
+    id: int
+    fecha: datetime
+    cuarto_actual: int
+    estado: EstadoPartido
+    pts_local: int
+    pts_visitante: int
+    local_id: int
+    visitante_id: int
+    competicion: Optional[str] = None
+    cancha: Optional[str]
+    arbitro_principal: Optional[str]
+    arbitro_asistente1: Optional[str]
+    arbitro_asistente2: Optional[str]
+    equipo_local: Optional[EquipoMin]
+    equipo_visitante: Optional[EquipoMin]
+
+    class Config:
+        from_attributes = True
