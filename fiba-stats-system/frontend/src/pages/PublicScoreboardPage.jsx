@@ -96,7 +96,7 @@ const ParcialesBar = memo(({ parciales, partido }) => {
       const p = parciales?.find(p => p.cuarto === q && p.intervalo === 2)
       const isActive = partido.cuarto_actual === q
       const hasData = !!p
-      return { q, local: p?.pts_local ?? null, visitor: p?.pts_visitante ?? null, isActive, hasData }
+      return { q, local: p?.pts_local ?? 0, visitor: p?.pts_visitante ?? 0, isActive, hasData }
     })
   }, [parciales, partido.cuarto_actual])
 
@@ -104,35 +104,48 @@ const ParcialesBar = memo(({ parciales, partido }) => {
   const totalVisitor = quarters.reduce((s, q) => s + (q.visitor ?? 0), 0)
 
   return (
-    <div className="w-full border-t border-white/[0.06] bg-white/[0.01]">
-      <div className="max-w-5xl mx-auto flex items-stretch divide-x divide-white/[0.06]">
-        <div className="flex flex-col justify-center px-8 py-4 min-w-[100px]">
-          <span className="text-[8px] font-black tracking-[0.5em] text-white/20 uppercase">Parciales</span>
+    <div className="w-full border-t border-white/[0.08] bg-black/60 backdrop-blur-xl relative z-20">
+      <div className="w-full flex items-stretch divide-x divide-white/[0.08]">
+        <div className="flex flex-col justify-center px-[3vw] py-[1.5vh] min-w-[12vw]">
+          <span className="text-[0.7vw] font-black tracking-[0.6em] text-white/30 uppercase">INTERVALOS</span>
+          <span className="text-[0.55vw] font-bold text-white/10 uppercase mt-0.5">FIBA STANDARDS</span>
         </div>
+
         {quarters.map(({ q, local, visitor, isActive, hasData }) => (
-          <div key={q} className={`flex flex-col items-center py-4 px-6 transition-colors min-w-[90px] ${isActive ? 'bg-white/[0.03]' : ''}`}>
-            <span className={`text-[8px] font-black tracking-[0.5em] uppercase mb-3 ${isActive ? 'text-[#0078D4]' : 'text-white/15'}`}>
-              C{q}
-            </span>
-            {hasData ? (
-              <div className="flex gap-3 font-black tabular-nums" style={{ fontSize: '18px' }}>
-                <span className={isActive ? 'text-white' : 'text-white/40'}>{local}</span>
-                <span className="text-white/10">—</span>
-                <span className={isActive ? 'text-white' : 'text-white/40'}>{visitor}</span>
-              </div>
-            ) : (
-              <div className="flex gap-3 font-black" style={{ fontSize: '18px', color: 'rgba(255,255,255,0.08)' }}>
-                <span>—</span><span style={{ color: 'rgba(255,255,255,0.04)' }}>—</span><span>—</span>
-              </div>
+          <div
+            key={q}
+            className={`flex-1 flex flex-col items-center justify-center py-[2vh] transition-all duration-500 relative ${isActive ? 'bg-white/[0.06] shadow-[inset_0_0_40px_rgba(255,255,255,0.03)]' : ''
+              }`}
+          >
+            {isActive && (
+              <motion.div
+                layoutId="activeQuarter"
+                className="absolute inset-x-0 top-0 h-1 bg-[#0078D4] shadow-[0_0_15px_#0078D4]"
+              />
             )}
+            <span className={`text-[0.8vw] font-black tracking-[0.4em] uppercase mb-[1vh] ${isActive ? 'text-[#0078D4] drop-shadow-[0_0_8px_rgba(0,120,212,0.4)]' : 'text-white/20'
+              }`}>
+              CUARTO {q}
+            </span>
+            <div className={`flex items-center gap-[1.5vw] font-black tabular-nums transition-scale duration-300 ${isActive ? 'scale-110' : ''}`}>
+              <span className={`text-[2.2vw] ${isActive || hasData ? 'text-white' : 'text-white/10'}`}>
+                {local}
+              </span>
+              <span className="text-[1.2vw] text-white/10 font-light">—</span>
+              <span className={`text-[2.2vw] ${isActive || hasData ? 'text-white' : 'text-white/10'}`}>
+                {visitor}
+              </span>
+            </div>
           </div>
         ))}
-        <div className="flex flex-col items-center py-4 px-8 bg-white/[0.02] min-w-[110px]">
-          <span className="text-[8px] font-black tracking-[0.5em] text-white/20 uppercase mb-3">TOTAL</span>
-          <div className="flex gap-3 font-black tabular-nums text-white" style={{ fontSize: '18px' }}>
-            <span>{totalLocal}</span>
-            <span className="text-white/10">—</span>
-            <span>{totalVisitor}</span>
+
+        <div className="flex flex-col items-center justify-center py-[2vh] px-[4vw] bg-white/[0.04] border-l-2 border-white/5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+          <span className="text-[0.8vw] font-black tracking-[0.8em] text-white/40 uppercase mb-[1vh] relative z-10">TOTAL</span>
+          <div className="flex items-center gap-[1.5vw] font-black tabular-nums text-white relative z-10">
+            <span className="text-[2.5vw] drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">{totalLocal}</span>
+            <span className="text-[1.5vw] text-white/20 font-thin">—</span>
+            <span className="text-[2.5vw] drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">{totalVisitor}</span>
           </div>
         </div>
       </div>
