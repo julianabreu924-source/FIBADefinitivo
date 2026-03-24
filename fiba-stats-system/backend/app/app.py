@@ -3,12 +3,49 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.api.routes import equipos, jugadores, partidos, stats, eventos, parciales
 from app.websockets.manager import router as ws_router
-from app.db.database import init_db
+import asyncio
+from app.db.database import SessionLocal, init_db
+from app.models.partido import Partido, EstadoPartido
+from app.websockets.manager import broadcast_update
+
+async def clock_worker():
+    """Background task to decrement active clocks every second."""
+    while True:
+        await asyncio.sleep(1)
+        db = SessionLocal()
+        try:
+            active_games = db.query(Partido).filter(
+                Partido.reloj_activo == True,
+                Partido.tiempo_restante > 0
+            ).all()
+            
+            for p in active_games:
+                p.tiempo_restante -= 1
+                if p.tiempo_restante <= 0:
+                    p.reloj_activo = False
+                
+                # Broadcast the clock update
+                await broadcast_update(p.id, {
+                    "event": "clock_tick",
+                    "tiempo_restante": p.tiempo_restante,
+                    "reloj_activo": p.reloj_activo
+                })
+            
+            if active_games:
+                db.commit()
+        except Exception as e:
+            # We don't want to crash the worker
+            print(f"Error in clock worker: {e}")
+            db.rollback()
+        finally:
+            db.close()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize the database
     init_db()
+    # Start the clock background worker
+    asyncio.create_task(clock_worker())
     yield
     # Shutdown: Add cleanup logic if needed
 

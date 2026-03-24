@@ -5,6 +5,7 @@ import ElectronicoPage from './pages/ElectronicoPage'
 import ScoreboardPage from './pages/ScoreboardPage'
 import HistorialPage from './pages/HistorialPage'
 import ReportesPage from './pages/ReportesPage' // Existing but empty, may use later
+import PublicScoreboardPage from './pages/PublicScoreboardPage'
 import SplashScreen from './components/SplashScreen'
 
 export default function App() {
@@ -27,7 +28,8 @@ export default function App() {
       <Route path="/operacion/:id" element={<ElectronicoPage />} />
 
       {/* Broadcast Views */}
-      <Route path="/scoreboard" element={<ScoreboardPage />} />
+      <Route path="/panel-de-datos" element={<ScoreboardPage />} />
+      <Route path="/public-scoreboard" element={<PublicScoreboardPage />} />
 
       {/* Data Archives */}
       <Route path="/historial" element={<HistorialPage />} />

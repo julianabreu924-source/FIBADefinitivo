@@ -1,41 +1,78 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 /**
- * AnimatedNumber - Componente de alta precisión para transiciones numéricas.
- * Utiliza resortes (springs) para un movimiento fluido y profesional,
- * similar a los tableros de control de alta gama.
+ * AnimatedNumber - El corazón de la dopamina visual.
+ * Ahora con transiciones "Épicas":
+ * - Flash de Neón (Verde al subir, Rojo al bajar).
+ * - Expansión cinemática.
+ * - Sombra proyectada dinámica.
  */
-export default function AnimatedNumber({ value }) {
-    const [displayValue, setDisplayValue] = useState(value)
-    const [direction, setDirection] = useState(0) // 1 para arriba, -1 para abajo
+export default function AnimatedNumber({ value, className = "" }) {
+    const [displayValue, setDisplayValue] = useState(value);
+    const [flash, setFlash] = useState(null); // 'up', 'down', or null
 
     useEffect(() => {
         if (value !== displayValue) {
-            setDirection(value > displayValue ? 1 : -1)
-            setDisplayValue(value)
+            const dir = value > displayValue ? 'up' : 'down';
+            setFlash(dir);
+            setDisplayValue(value);
+
+            // Apagar el flash después de la animación
+            const timer = setTimeout(() => setFlash(null), 800);
+            return () => clearTimeout(timer);
         }
-    }, [value, displayValue])
+    }, [value, displayValue]);
 
     return (
-        <div className="relative inline-flex flex-col items-center overflow-hidden h-[1em]">
+        <div className={`relative inline-flex flex-col items-center overflow-visible h-[1.12em] ${className}`}>
             <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                     key={value}
-                    initial={{ y: direction > 0 ? '100%' : '-100%', opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: direction > 0 ? '-100%' : '100%', opacity: 0 }}
+                    initial={{
+                        y: flash === 'up' ? '50%' : '-50%',
+                        opacity: 0,
+                        scale: 1.5,
+                        filter: 'blur(4px)'
+                    }}
+                    animate={{
+                        y: 0,
+                        opacity: 1,
+                        scale: 1,
+                        filter: 'blur(0px)',
+                        color: flash === 'up' ? '#10b981' : flash === 'down' ? '#ef4444' : undefined,
+                        textShadow: flash ? `0 0 20px ${flash === 'up' ? '#10b981' : '#ef4444'}` : 'none'
+                    }}
+                    exit={{
+                        y: flash === 'up' ? '-50%' : '50%',
+                        opacity: 0,
+                        scale: 0.8,
+                        filter: 'blur(2px)'
+                    }}
                     transition={{
                         type: 'spring',
-                        stiffness: 300,
-                        damping: 30,
-                        mass: 0.8
+                        stiffness: 400,
+                        damping: 25,
+                        mass: 0.5
                     }}
-                    className="inline-block"
+                    className="inline-block relative z-10 font-bold"
                 >
                     {value}
                 </motion.span>
             </AnimatePresence>
+
+            {/* Aura de impacto de cambio */}
+            <AnimatePresence>
+                {flash && (
+                    <motion.div
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 2, opacity: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className={`absolute inset-0 rounded-full blur-xl pointer-events-none ${flash === 'up' ? 'bg-emerald-500/40' : 'bg-red-500/40'}`}
+                    />
+                )}
+            </AnimatePresence>
         </div>
-    )
+    );
 }

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 from datetime import datetime
@@ -26,6 +26,8 @@ class Partido(Base):
     estado             = Column(Enum(EstadoPartido), default=EstadoPartido.PENDIENTE)
     pts_local          = Column(Integer, default=0)
     pts_visitante      = Column(Integer, default=0)
+    tiempo_restante    = Column(Integer, default=600)  # Segundos restantes (10 min)
+    reloj_activo       = Column(Boolean, default=False)
 
     equipo_local     = relationship("Equipo", foreign_keys=[local_id])
     equipo_visitante = relationship("Equipo", foreign_keys=[visitante_id])

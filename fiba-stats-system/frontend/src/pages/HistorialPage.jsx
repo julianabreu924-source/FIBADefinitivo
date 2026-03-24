@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, List, Trophy, ChevronRight, LayoutDashboard, Search, Filter, Shield, Activity, Database, Clock, Terminal } from 'lucide-react'
+import { Calendar, List, Trophy, ChevronRight, LayoutDashboard, Search, Filter, Shield, Activity, Database, Clock, Terminal, Printer } from 'lucide-react'
 import HistoryControls from '../components/HistoryControls'
 import PrintableReport from '../components/PrintableReport'
 import { getPartidos, getResumenPartido, getParciales, getEquipo } from '../services/api'
@@ -19,7 +19,7 @@ const MatchCard = ({ match, index, onPrint }) => {
       transition={{ delay: index * 0.03 }}
       className="group relative bg-[#111] border border-white/5 hover:border-[#0078D4]/40 transition-all duration-500 overflow-hidden"
     >
-      <Link to={inProgress ? `/operacion/${match.id}` : `/scoreboard?id=${match.id}`} className="block">
+      <Link to={inProgress ? `/operacion/${match.id}` : `/panel-de-datos?id=${match.id}`} className="block">
         <div className="absolute top-0 left-0 w-full h-1 bg-white/5 group-hover:bg-[#0078D4] transition-colors" />
 
         <div className="p-7 space-y-6 relative z-10">
@@ -68,7 +68,7 @@ const MatchCard = ({ match, index, onPrint }) => {
                 className="w-9 h-9 flex items-center justify-center bg-white/[0.02] border border-white/5 text-[#333] hover:text-[#0078D4] hover:bg-[#0078D4]/10 transition-all rounded-sm group-hover:border-[#0078D4]/40"
                 title="Generar REPORTE_OFICIAL"
               >
-                <Activity size={14} />
+                <Printer size={14} />
               </button>
               <div className="flex flex-col items-end pl-4">
                 <span className="text-[7px] font-black text-[#222] uppercase mb-0.5">DATE_REF</span>
@@ -158,7 +158,7 @@ export default function HistorialPage() {
         {/* Brand / Nav */}
         <div className="flex items-center gap-4 mr-10">
           <div className="w-8 h-8 rounded-sm bg-[#0078D4] flex items-center justify-center shadow-[0_0_15px_rgba(0,120,212,0.4)] flex-shrink-0">
-            <Box size={18} className="text-white" />
+            <Shield size={18} className="text-white" />
           </div>
           <div>
             <h2 className="text-[12px] font-black uppercase tracking-[0.3em] italic leading-none">FIBA <span className="text-[#0078D4]">OS</span></h2>

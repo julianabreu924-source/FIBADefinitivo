@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
+  baseURL: import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '/api'),
   headers: { 'Content-Type': 'application/json' }
 })
 
@@ -23,11 +23,14 @@ export const iniciarPartido = (id) => api.put(`/api/partidos/${id}/iniciar`)
 export const finalizarPartido = (id) => api.put(`/api/partidos/${id}/finalizar`)
 export const getStatsPartido = (partidoId) => api.get(`/api/stats/partido/${partidoId}`)
 export const getStatsJugador = (jugadorId) => api.get(`/api/stats/jugador/${jugadorId}`)
+export const getGlobalStats = () => api.get('/api/stats/global')
 export const registrarEvento = (data) => api.post('/api/eventos', data)
 export const deshacerEvento = (partidoId) => api.post(`/api/eventos/deshacer/${partidoId}`)
 export const rehacerEvento = (partidoId) => api.post(`/api/eventos/rehacer/${partidoId}`)
 export const getParciales = (partidoId) => api.get(`/api/parciales/${partidoId}`)
 export const guardarParcial = (partidoId, data) => api.post(`/api/parciales/${partidoId}`, data)
 export const getResumenPartido = (id) => api.get(`/api/partidos/${id}/resumen`)
+export const toggleReloj = (id) => api.put(`/api/partidos/${id}/reloj/toggle`)
+export const setReloj = (id, segundos) => api.put(`/api/partidos/${id}/reloj/set?segundos=${segundos}`)
 
 export default api

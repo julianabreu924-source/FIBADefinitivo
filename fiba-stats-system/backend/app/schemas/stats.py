@@ -1,5 +1,21 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+
+class GlobalStatsRead(BaseModel):
+    total_matches: int
+    total_punto_avg: float
+    total_puntos: int
+    total_asistencias: int
+    total_rebotes: int
+    total_tapones: int
+    total_eficiencia_avg: float
+    pnt_pintura: int
+    pnt_triples: int
+    pnt_libres: int
+    tendencia_puntos: List[float]
+
+    class Config:
+        from_attributes = True
 
 class StatsJugadorRead(BaseModel):
     id: int

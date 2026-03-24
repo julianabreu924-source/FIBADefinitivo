@@ -30,6 +30,8 @@ class PartidoRead(BaseModel):
     estado: EstadoPartido
     pts_local: int
     pts_visitante: int
+    tiempo_restante: int
+    reloj_activo: bool
     local_id: int
     visitante_id: int
     competicion: Optional[str] = None

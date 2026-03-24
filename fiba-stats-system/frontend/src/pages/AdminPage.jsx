@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, Trophy, FileText, Settings, Plus, Trash2, Edit3, Save, X,
   ChevronRight, Database, Shield, Layout, Command, Search, Filter,
-  Download, Printer, Info, Clock, Terminal, CheckCircle2, AlertCircle, Activity, Box
+  Download, Printer, Info, Clock, Terminal, CheckCircle2, AlertCircle, Activity, Box, Radio
 } from 'lucide-react'
 import {
   getEquipos, crearEquipo, eliminarEquipo,
@@ -14,6 +14,7 @@ import ConfirmModal from '../components/ConfirmModal'
 import ReportesSection from '../components/ReportesSection'
 import HistoryControls from '../components/HistoryControls'
 import PrintableReport from '../components/PrintableReport'
+import AnaliticasSection from '../components/AnaliticasSection'
 import { getResumenPartido, getParciales, getEquipo } from '../services/api'
 import { Link } from 'react-router-dom'
 
@@ -129,12 +130,12 @@ export default function AdminPage() {
 
       setIsPrinting(true)
 
-      // Pequeño delay para dejar que el DOM de impresión se renderice
+      // Pequeño delay aumentado para asegurar que el DOM de impresión y sus tablas se rendericen
       setTimeout(() => {
         window.print()
         setIsPrinting(false)
         setPrintData(null)
-      }, 500)
+      }, 1000)
     } catch (e) {
       console.error(e)
       flash('Error al generar reporte.')
@@ -164,8 +165,11 @@ export default function AdminPage() {
           <button onClick={() => setVista('partidos')} className={`nav-item ${vista === 'partidos' ? 'active' : ''}`}>
             <Terminal size={14} /> Sockets en Vivo
           </button>
+          <button onClick={() => setVista('analiticas')} className={`nav-item ${vista === 'analiticas' ? 'active' : ''}`}>
+            <Activity size={14} /> Centro de Analíticas
+          </button>
           <button onClick={() => setVista('reportes')} className={`nav-item ${vista === 'reportes' ? 'active' : ''}`}>
-            <FileText size={14} /> Centro de Analíticas
+            <FileText size={14} /> Historial y PDF
           </button>
         </nav>
 
@@ -430,69 +434,80 @@ export default function AdminPage() {
                   </form>
                 </div>
 
-                <div className="col-span-12 lg:col-span-8 p-16 overflow-y-auto custom-scrollbar">
-                  <div className="mb-20">
+                <div className="col-span-12 lg:col-span-8 flex flex-col h-full overflow-hidden">
+                  <div className="p-16 pb-8 flex-shrink-0">
                     <h2 className="text-5xl font-black italic tracking-tighter uppercase leading-none">Archivos <span className="text-[#0078D4]">de Socket</span></h2>
                     <p className="text-[11px] text-[#444] font-black tracking-[0.5em] uppercase mt-6">Buffers Activos / Persistencia Histórica de Datos</p>
                   </div>
 
-                  <div className="space-y-6">
-                    {partidos.map(p => (
-                      <div key={p.id} className="group relative bg-[#111] border border-white/5 hover:border-[#0078D4]/40 transition-all duration-500 shadow-2xl overflow-hidden">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-[#0078D4] opacity-40 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex-1 overflow-y-auto custom-scrollbar px-16 pb-16">
+                    <div className="space-y-6">
+                      {partidos.map(p => (
+                        <div key={p.id} className="group relative bg-[#111] border border-white/5 hover:border-[#0078D4]/40 transition-all duration-500 shadow-2xl overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#0078D4] opacity-40 group-hover:opacity-100 transition-opacity" />
 
-                        <div className="p-7 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-8 relative z-10">
-                          {/* INFO BLOCK */}
-                          <div className="flex-1 space-y-4">
-                            <div className="flex items-center gap-4">
-                              <span className={`text-[8px] font-black px-3 py-1 border rounded-sm tracking-[0.2em] uppercase
-                                ${p.estado === 'en_juego' ? 'bg-[#0078D4]/10 border-[#0078D4]/40 text-[#0078D4] animate-pulse' : 'bg-[#1a1a1a] border-white/5 text-[#666]'}
-                              `}>
-                                {p.estado === 'en_juego' ? '● PROTOCOLO_VIVO' : 'ESTADO_ARCHIVADO'}
-                              </span>
-                              <span className="text-[9px] font-mono text-[#333] tracking-widest uppercase">ID: 0x{p.id.toString(16).toUpperCase()}</span>
-                            </div>
+                          <div className="p-7 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-8 relative z-10">
+                            {/* INFO BLOCK */}
+                            <div className="flex-1 space-y-4">
+                              <div className="flex items-center gap-4">
+                                <span className={`text-[8px] font-black px-3 py-1 border rounded-sm tracking-[0.2em] uppercase
+                                  ${p.estado === 'en_juego' ? 'bg-[#0078D4]/10 border-[#0078D4]/40 text-[#0078D4] animate-pulse' : 'bg-[#1a1a1a] border-white/5 text-[#666]'}
+                                `}>
+                                  {p.estado === 'en_juego' ? '● PROTOCOLO_VIVO' : 'ESTADO_ARCHIVADO'}
+                                </span>
+                                <span className="text-[9px] font-mono text-[#333] tracking-widest uppercase">ID: 0x{p.id.toString(16).toUpperCase()}</span>
+                              </div>
 
-                            <div className="space-y-1">
-                              <h4 className="text-xl font-black italic uppercase tracking-tight text-white group-hover:text-[#0078D4] transition-colors">
-                                {p.local_nombre} <span className="text-[#222] italic mx-1">vs</span> {p.visitante_nombre}
-                              </h4>
-                              <div className="flex items-center gap-8">
-                                <div className="flex flex-col">
-                                  <span className="text-[7px] font-black text-[#222] uppercase mb-0.5">STATION_NODE</span>
-                                  <span className="text-[10px] font-bold text-[#555] uppercase tracking-wider">{p.cancha || 'ARENA_DEFAULT'}</span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[7px] font-black text-[#222] uppercase mb-0.5">DATE_REF</span>
-                                  <span className="text-[10px] font-mono text-[#555] uppercase">{new Date(p.fecha).toLocaleDateString()}</span>
+                              <div className="space-y-1">
+                                <h4 className="text-xl font-black italic uppercase tracking-tight text-white group-hover:text-[#0078D4] transition-colors">
+                                  {p.local_nombre} <span className="text-[#222] italic mx-1">vs</span> {p.visitante_nombre}
+                                </h4>
+                                <div className="flex items-center gap-8">
+                                  <div className="flex flex-col">
+                                    <span className="text-[7px] font-black text-[#222] uppercase mb-0.5">STATION_NODE</span>
+                                    <span className="text-[10px] font-bold text-[#555] uppercase tracking-wider">{p.cancha || 'ARENA_DEFAULT'}</span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[7px] font-black text-[#222] uppercase mb-0.5">DATE_REF</span>
+                                    <span className="text-[10px] font-mono text-[#555] uppercase">{new Date(p.fecha).toLocaleDateString()}</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
+
+                            {/* ACTION BLOCK */}
+                            <div className="flex items-center gap-2 w-full xl:w-auto">
+                              <Link to={`/operacion/${p.id}`} className="flex-1 xl:flex-none h-11 px-8 bg-[#0078D4]/5 border border-[#0078D4]/20 hover:bg-[#0078D4] hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 group/btn shadow-lg">
+                                <Shield size={14} className="group-hover/btn:rotate-12 transition-transform" /> CONSOLA
+                              </Link>
+                              <Link to={`/panel-de-datos?id=${p.id}`} className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-[#444] hover:text-white group/mon shadow-lg" target="_blank" title="Tablero de Estadísticas">
+                                <Layout size={16} className="group-hover/mon:scale-110 transition-transform" />
+                              </Link>
+                              <Link to={`/public-scoreboard?id=${p.id}`} className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-red-500 hover:text-red-400 group/pub shadow-lg" target="_blank" title="Scoreboard Público">
+                                <Radio size={16} className="group-hover/pub:scale-110 transition-transform" />
+                              </Link>
+                              <button onClick={() => handleImprimirPartido(p)} className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#0078D4]/20 hover:text-[#0078D4] transition-all text-[#444] group/print shadow-lg" title="Imprimir Hoja de Anotación Oficial">
+                                <Printer size={16} className="group-hover/print:scale-110 transition-transform" />
+                              </button>
+                              <button onClick={() => handleBorrarPartido(p.id)} className="w-11 h-11 flex items-center justify-center text-[#222] hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 group/del shadow-lg">
+                                <Trash2 size={16} className="group-hover/del:scale-110 transition-transform" />
+                              </button>
+                            </div>
                           </div>
 
-                          {/* ACTION BLOCK */}
-                          <div className="flex items-center gap-2 w-full xl:w-auto">
-                            <Link to={`/operacion/${p.id}`} className="flex-1 xl:flex-none h-11 px-8 bg-[#0078D4]/5 border border-[#0078D4]/20 hover:bg-[#0078D4] hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 group/btn shadow-lg">
-                              <Shield size={14} className="group-hover/btn:rotate-12 transition-transform" /> CONSOLA
-                            </Link>
-                            <Link to={`/scoreboard?id=${p.id}`} className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-[#444] hover:text-white group/mon shadow-lg" target="_blank">
-                              <Layout size={16} className="group-hover/mon:scale-110 transition-transform" />
-                            </Link>
-                            <button onClick={() => handleImprimirPartido(p)} className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#0078D4]/20 hover:text-[#0078D4] transition-all text-[#444] group/print shadow-lg" title="Imprimir Hoja de Anotación Oficial">
-                              <Printer size={16} className="group-hover/print:scale-110 transition-transform" />
-                            </button>
-                            <button onClick={() => handleBorrarPartido(p.id)} className="w-11 h-11 flex items-center justify-center text-[#222] hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 group/del shadow-lg">
-                              <Trash2 size={16} className="group-hover/del:scale-110 transition-transform" />
-                            </button>
-                          </div>
+                          {/* BACKGROUND EFFECT */}
+                          <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-[#0078D4] blur-[150px] opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none" />
                         </div>
-
-                        {/* BACKGROUND EFFECT */}
-                        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-[#0078D4] blur-[150px] opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none" />
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {vista === 'analiticas' && (
+              <motion.div key="an" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="h-full">
+                <AnaliticasSection />
               </motion.div>
             )}
 

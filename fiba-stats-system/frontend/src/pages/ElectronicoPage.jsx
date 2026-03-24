@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { registrarEvento, deshacerEvento, rehacerEvento, avanzarCuarto, guardarParcial, iniciarPartido, finalizarPartido, getPartido } from '../services/api'
-import { RotateCcw, RotateCw, Shield, Terminal, Zap, Cpu, Database, ChevronLeft, ChevronRight, Layout, Info, Server } from 'lucide-react'
+import {
+  registrarEvento, deshacerEvento, rehacerEvento, avanzarCuarto,
+  guardarParcial, iniciarPartido, finalizarPartido, getPartido,
+  toggleReloj, setReloj
+} from '../services/api'
+import {
+  RotateCcw, RotateCw, Shield, Terminal, Zap, Cpu, Database,
+  ChevronLeft, ChevronRight, Layout, Info, Server, Play, Pause, Timer
+} from 'lucide-react'
 import { usePartido } from '../hooks/usePartido'
 import HistoryControls from '../components/HistoryControls'
 
@@ -38,7 +45,6 @@ export default function ElectronicoPage() {
   const [partidoId, setPartidoId] = useState(null)
   const [jugadorSel, setJugadorSel] = useState(null)
   const [equipoSel, setEquipoSel] = useState(null)
-  const [tiempo, setTiempo] = useState('10:00')
   const [msg, setMsg] = useState(null)
   const [tab, setTab] = useState('local')
 
@@ -52,12 +58,76 @@ export default function ElectronicoPage() {
   const {
     partido, equipoLocal, equipoVisitante,
     jugadoresLocal, jugadoresVisitante,
-    getStats, refreshStats, refreshPartido,
-  } = usePartido(partidoId, { pollInterval: 4000 })
+    getStats, refreshStats, refreshPartido, parciales
+  } = usePartido(partidoId, { pollInterval: 4000, withParciales: true })
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const handleToggleReloj = async () => {
+    try {
+      await toggleReloj(partidoId)
+      refreshPartido()
+    } catch (e) {
+      flash('ERROR_RELOJ_CONTROL', '#f43f5e')
+    }
+  }
+
+  const handleSetReloj = async (sec) => {
+    try {
+      await setReloj(partidoId, sec)
+      refreshPartido()
+      flash(`TIEMPO_AJUSTADO: ${formatTime(sec)}`, '#0078D4')
+    } catch (e) {
+      flash('ERROR_RELOJ_SET', '#f43f5e')
+    }
+  }
 
   const flash = (text, color = '#0078D4') => {
     setMsg({ text, color })
     setTimeout(() => setMsg(null), 2000)
+  }
+
+  // --- Lógica de Intervalos (C1-C4) ---
+
+  const handleAvanzarIntervalo = async () => {
+    if (!partido) return
+    const q = partido.cuarto_actual
+
+    // Verificamos qué intervalo falta guardar en este cuarto
+    const p1 = parciales.find(p => p.cuarto === q && p.intervalo === 1)
+    const p2 = parciales.find(p => p.cuarto === q && p.intervalo === 2)
+
+    // Calculamos los puntos del parcial (puntos actuales - suma de parciales previos)
+    const sumaPreviosLocal = parciales.reduce((acc, p) => acc + (p.pts_local || 0), 0)
+    const sumaPreviosVis = parciales.reduce((acc, p) => acc + (p.pts_visitante || 0), 0)
+
+    const ptsLocalParcial = partido.pts_local - sumaPreviosLocal
+    const ptsVisParcial = partido.pts_visitante - sumaPreviosVis
+
+    try {
+      if (!p1) {
+        // Guardar intervalo 1 (5 min)
+        await guardarParcial(partidoId, { cuarto: q, intervalo: 1, pts_local: ptsLocalParcial, pts_visitante: ptsVisParcial })
+        flash(`INTERVALO C${q}-5M REGISTRADO`, '#0078D4')
+      } else if (!p2) {
+        // Guardar intervalo 2 (Final de cuarto) y avanzar
+        await guardarParcial(partidoId, { cuarto: q, intervalo: 2, pts_local: ptsLocalParcial, pts_visitante: ptsVisParcial })
+        if (q < 4) {
+          await avanzarCuarto(partidoId)
+          await handleSetReloj(600) // Reset clock to 10:00 for new quarter
+          flash(`CUARTO C${q} CERRADO -> INICIANDO C${q + 1}`, '#2ea043')
+        } else {
+          flash(`CUARTO C${q} CERRADO (FINAL DEL JUEGO)`, '#fbbf24')
+        }
+      }
+      refreshPartido()
+    } catch (e) {
+      flash('ERROR AL GUARDAR INTERVALO', '#f43f5e')
+    }
   }
 
   const handleAccion = async (accion) => {
@@ -68,7 +138,7 @@ export default function ElectronicoPage() {
       equipo_id: equipoSel,
       tipo: accion.tipo,
       cuarto: partido.cuarto_actual,
-      tiempo
+      tiempo: formatTime(partido.tiempo_restante)
     })
     refreshStats()
     refreshPartido()
@@ -189,14 +259,62 @@ export default function ElectronicoPage() {
           <div className="text-5xl font-oswald font-black text-white italic ml-auto mr-10">{partido.pts_local}</div>
         </div>
 
-        <div className="flex flex-col items-center gap-1 min-w-[200px] border-x border-white/5 h-full justify-center">
-          <div className="flex items-center gap-3">
-            <input value={tiempo} onChange={e => setTiempo(e.target.value)} className="bg-transparent text-white font-oswald text-4xl text-center w-24 focus:outline-none" />
-            <div className="bg-[#0078D4]/10 border border-[#0078D4]/30 text-[#0078D4] font-oswald font-black text-2xl w-14 h-8 flex items-center justify-center">P{partido.cuarto_actual}</div>
+        <div className="flex flex-col items-center gap-2 min-w-[320px] border-x border-white/5 h-full justify-center bg-white/[0.01]">
+          {/* Cronómetro y Periodo */}
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">CLOCK_FEED</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleToggleReloj}
+                  className={`w-10 h-10 flex items-center justify-center rounded border transition-all ${partido.reloj_activo ? 'bg-red-500/20 border-red-500/50 text-red-500' : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-500'}`}
+                >
+                  {partido.reloj_activo ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                </button>
+                <div className="bg-black/40 border border-white/5 text-white font-oswald text-4xl text-center w-32 h-12 flex items-center justify-center tabular-nums shadow-inner">
+                  {formatTime(partido.tiempo_restante)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button onClick={() => handleSetReloj(600)} className="w-8 h-5 bg-white/5 hover:bg-white/10 flex items-center justify-center rounded text-[8px] font-bold">10</button>
+                  <button onClick={() => handleSetReloj(partido.tiempo_restante + 60)} className="w-8 h-5 bg-white/5 hover:bg-white/10 flex items-center justify-center rounded text-[8px] font-bold">+1</button>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">PERIOD</span>
+              <div className="bg-[#0078D4]/10 border border-[#0078D4]/30 text-[#0078D4] font-oswald font-black text-3xl w-16 h-12 flex items-center justify-center shadow-[0_0_15px_rgba(0,120,212,0.1)]">P{partido.cuarto_actual}</div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            {!partido.estado === 'en_juego' ? <button onClick={handleIniciar} className="text-[8px] font-black uppercase text-[#0078D4]">START_CLK</button> : null}
-            {partido.estado === 'en_juego' && <button onClick={handleFinalizar} className="text-[8px] font-black uppercase text-[#f43f5e]">STOP_SESSION</button>}
+
+          {/* Acciones de Control Maestro */}
+          <div className="flex gap-2 w-full px-4">
+            {partido.estado !== 'en_juego' ? (
+              <button
+                onClick={handleIniciar}
+                className="w-full h-10 bg-[#2ea043] border border-[#2ea043]/40 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#3fb950] transition-all flex items-center justify-center gap-2 shadow-[0_5px_15px_rgba(46,160,67,0.2)]"
+              >
+                <Zap size={12} fill="currentColor" /> START_GAME_CORE
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleAvanzarIntervalo}
+                  className="flex-1 h-10 bg-[#0078D4] border border-[#0078D4]/50 text-white text-[9px] font-black uppercase tracking-[0.15em] hover:bg-[#0086F0] transition-all shadow-[0_5px_15px_rgba(0,120,212,0.3)] flex items-center justify-center text-center px-2"
+                >
+                  {!parciales.find(p => p.cuarto === partido.cuarto_actual && p.intervalo === 1)
+                    ? `CERRAR 5 MIN (C${partido.cuarto_actual})`
+                    : `CERRAR C${partido.cuarto_actual} & AVANZAR`
+                  }
+                </button>
+                <button
+                  onClick={handleFinalizar}
+                  className="w-10 h-10 bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center flex-shrink-0"
+                  title="Detener Sesión"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
