@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.api.routes import equipos, jugadores, partidos, stats, eventos, parciales
+from app.api.routes import equipos, jugadores, partidos, stats, eventos, parciales, auth
 from app.websockets.manager import router as ws_router
 import asyncio
 from app.db.database import SessionLocal, init_db
 from app.models.partido import Partido, EstadoPartido
+from app.models.user import User
+from app.core.security import get_password_hash
 from app.websockets.manager import broadcast_update
 
 async def clock_worker():
@@ -44,6 +46,24 @@ async def clock_worker():
 async def lifespan(app: FastAPI):
     # Startup: Initialize the database
     init_db()
+    
+    # Create default admin if not exists
+    db = SessionLocal()
+    try:
+        if db.query(User).count() == 0:
+            admin_user = User(
+                username="admin",
+                hashed_password=get_password_hash("fiba2025"),
+                is_admin=True
+            )
+            db.add(admin_user)
+            db.commit()
+            print("Default admin user created: admin / fiba2025")
+    except Exception as e:
+        print(f"Error creating default user: {e}")
+    finally:
+        db.close()
+
     # Start the clock background worker
     asyncio.create_task(clock_worker())
     yield
@@ -69,6 +89,7 @@ app.include_router(partidos.router,  prefix="/api/partidos",  tags=["Partidos"])
 app.include_router(stats.router,     prefix="/api/stats",     tags=["Stats"])
 app.include_router(eventos.router,   prefix="/api/eventos",   tags=["Eventos"])
 app.include_router(parciales.router, prefix="/api/parciales", tags=["Parciales"])
+app.include_router(auth.router,      prefix="/api/auth",      tags=["Auth"])
 app.include_router(ws_router)
 
 @app.get("/")

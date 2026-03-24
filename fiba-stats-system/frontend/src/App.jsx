@@ -4,43 +4,62 @@ import AdminPage from './pages/AdminPage'
 import ElectronicoPage from './pages/ElectronicoPage'
 import ScoreboardPage from './pages/ScoreboardPage'
 import HistorialPage from './pages/HistorialPage'
-import ReportesPage from './pages/ReportesPage' // Existing but empty, may use later
+import ReportesPage from './pages/ReportesPage'
 import PublicScoreboardPage from './pages/PublicScoreboardPage'
+import LoginPage from './pages/LoginPage'
 import SplashScreen from './components/SplashScreen'
+
+// Helper component to safeguard admin routes
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('fiba_token')
+  if (!token) return <Navigate to="/login" replace />
+  return children
+}
 
 export default function App() {
   const [loading, setLoading] = useState(true)
 
   if (loading) {
-    // Note: Prop updated to onComplete to match the new professional SplashScreen component
     return <SplashScreen onComplete={() => setLoading(false)} />
   }
 
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/admin" />} />
+      <Route path="/login" element={<LoginPage />} />
 
-      {/* Entity & Asset Management */}
-      <Route path="/admin" element={<AdminPage />} />
+      {/* Entity & Asset Management (Protected) */}
+      <Route path="/admin" element={
+        <ProtectedRoute><AdminPage /></ProtectedRoute>
+      } />
 
-      {/* Operational Consoles */}
-      <Route path="/electronico" element={<ElectronicoPage />} />
-      <Route path="/operacion/:id" element={<ElectronicoPage />} />
+      {/* Operational Consoles (Protected) */}
+      <Route path="/electronico" element={
+        <ProtectedRoute><ElectronicoPage /></ProtectedRoute>
+      } />
+      <Route path="/operacion/:id" element={
+        <ProtectedRoute><ElectronicoPage /></ProtectedRoute>
+      } />
 
-      {/* Broadcast Views */}
+      {/* Broadcast Views (Public) */}
       <Route path="/panel-de-datos" element={<ScoreboardPage />} />
       <Route path="/public-scoreboard" element={<PublicScoreboardPage />} />
 
-      {/* Data Archives */}
-      <Route path="/historial" element={<HistorialPage />} />
+      {/* Data Archives (Protected) */}
+      <Route path="/historial" element={
+        <ProtectedRoute><HistorialPage /></ProtectedRoute>
+      } />
 
-      {/* Technical Summaries (Placeholder or refined page) */}
-      <Route path="/resumen/:id" element={<HistorialPage />} />
+      {/* Technical Summaries (Protected) */}
+      <Route path="/resumen/:id" element={
+        <ProtectedRoute><HistorialPage /></ProtectedRoute>
+      } />
 
-      {/* Analytics Hub */}
-      <Route path="/reportes" element={<ReportesPage />} />
+      {/* Analytics Hub (Protected) */}
+      <Route path="/reportes" element={
+        <ProtectedRoute><ReportesPage /></ProtectedRoute>
+      } />
 
-      {/* Fallback to primary node */}
       <Route path="*" element={<Navigate to="/admin" />} />
     </Routes>
   )

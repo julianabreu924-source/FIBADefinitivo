@@ -5,6 +5,18 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
+// Intercept requests to add authentication token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('fiba_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+export const login = (username, password) => api.post('/api/auth/login', { username, password })
+export const logout = () => localStorage.removeItem('fiba_token')
+
 export const getEquipos = () => api.get('/api/equipos')
 export const getEquipo = (id) => api.get(`/api/equipos/${id}`)
 export const crearEquipo = (data) => api.post('/api/equipos', data)

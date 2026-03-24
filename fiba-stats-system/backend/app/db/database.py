@@ -21,7 +21,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def init_db():
-    from app.models import equipo, jugador, partido, stats_jugador, evento, parcial
+    from app.models import equipo, jugador, partido, stats_jugador, evento, parcial, user
     Base.metadata.create_all(bind=engine)
 
 def get_db():

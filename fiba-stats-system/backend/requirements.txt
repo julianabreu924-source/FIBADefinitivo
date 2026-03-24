@@ -8,3 +8,5 @@ jinja2
 python-dotenv
 pyinstaller
 psycopg2-binary
+passlib[bcrypt]
+pyjwt
