@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, List, Trophy, ChevronRight, LayoutDashboard, Search, Filter, Shield, Activity, Database, Clock, Terminal, Printer } from 'lucide-react'
 import HistoryControls from '../components/HistoryControls'
-import PrintableReport from '../components/PrintableReport'
 import { getPartidos, getResumenPartido, getParciales, getEquipo } from '../services/api'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-const MatchCard = ({ match, index, onPrint }) => {
+const MatchCard = ({ match, index }) => {
   const isFinal = match.estado === 'finalizado'
   const inProgress = match.estado === 'en_juego'
 
@@ -63,14 +62,7 @@ const MatchCard = ({ match, index, onPrint }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPrint(match); }}
-                className="w-9 h-9 flex items-center justify-center bg-white/[0.02] border border-white/5 text-[#333] hover:text-[#0078D4] hover:bg-[#0078D4]/10 transition-all rounded-sm group-hover:border-[#0078D4]/40"
-                title="Generar REPORTE_OFICIAL"
-              >
-                <Printer size={14} />
-              </button>
-              <div className="flex flex-col items-end pl-4">
+              <div className="flex flex-col items-end">
                 <span className="text-[7px] font-black text-[#222] uppercase mb-0.5">DATE_REF</span>
                 <span className="text-[10px] font-mono text-[#444]">{format(new Date(match.fecha), "dd/MM/yy")}</span>
               </div>
@@ -89,8 +81,6 @@ export default function HistorialPage() {
   const [partidos, setPartidos] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('todos')
-  const [printData, setPrintData] = useState(null)
-  const [isPrinting, setIsPrinting] = useState(false)
   const [toast, setToast] = useState('')
 
   useEffect(() => {
@@ -119,36 +109,7 @@ export default function HistorialPage() {
 
   const flash = (m) => { setToast(m); setTimeout(() => setToast(''), 3000) }
 
-  const handlePrint = async (p) => {
-    try {
-      flash('Invocando Buffer de Impresión...')
-      const [resumen, parciales, loc, vis] = await Promise.all([
-        getResumenPartido(p.id),
-        getParciales(p.id),
-        getEquipo(p.local_id),
-        getEquipo(p.visitante_id)
-      ])
-
-      setPrintData({
-        partido: p,
-        resumen: resumen.data,
-        parciales: parciales.data,
-        equipoLocal: loc.data,
-        equipoVisitante: vis.data
-      })
-
-      setIsPrinting(true)
-      setTimeout(() => {
-        window.print()
-        setIsPrinting(false)
-        setPrintData(null)
-      }, 500)
-    } catch (e) {
-      console.error(e)
-      flash('Fallo en Generación de Archivo.')
-    }
-  }
-
+  // print handler removed
   return (
     <div className="flex flex-col h-screen w-full bg-[#0a0a0a] text-white overflow-hidden">
       <div className="scanline" />
@@ -208,7 +169,7 @@ export default function HistorialPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
               <AnimatePresence mode="popLayout">
                 {filteredPartidos.map((match, i) => (
-                  <MatchCard key={match.id} match={match} index={i} onPrint={handlePrint} />
+                  <MatchCard key={match.id} match={match} index={i} />
                 ))}
               </AnimatePresence>
             </div>
@@ -248,17 +209,6 @@ export default function HistorialPage() {
         </div>
       </footer>
 
-      {isPrinting && printData && (
-        <div id="print-container" className="hidden print:block fixed inset-0 bg-white z-[99999]">
-          <PrintableReport
-            partido={printData.partido}
-            resumen={printData.resumen}
-            parciales={printData.parciales}
-            equipoLocal={printData.equipoLocal}
-            equipoVisitante={printData.equipoVisitante}
-          />
-        </div>
-      )}
     </div>
   )
 }

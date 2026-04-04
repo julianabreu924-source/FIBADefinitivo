@@ -210,6 +210,8 @@ def obtener_resumen_partido(db: Session, partido_id: int) -> Dict[str, Any]:
     pts_segunda_opp_l = 0
     pts_segunda_opp_v = 0
     ultimo_reb_of_equipo = None
+    
+    progresion_puntos = []
 
     SEGUNDOS_POR_CUARTO = 600  # 10 minutos
 
@@ -272,6 +274,13 @@ def obtener_resumen_partido(db: Session, partido_id: int) -> Dict[str, Any]:
         # Actualizar marcador y rachas
         if ev.tipo in PUNTOS:
             pts = PUNTOS[ev.tipo]
+            
+            jugador_num = ""
+            for j in jugadores_local + jugadores_visitante:
+                if j.id == ev.jugador_id:
+                    jugador_num = j.numero
+                    break
+                    
             if es_local:
                 pts_l += pts
                 racha_l += pts
@@ -282,6 +291,14 @@ def obtener_resumen_partido(db: Session, partido_id: int) -> Dict[str, Any]:
                 racha_v += pts
                 racha_l = 0
                 max_racha_v = max(max_racha_v, racha_v)
+                
+            progresion_puntos.append({
+                "equipo": "local" if es_local else "visitante",
+                "puntos_anotados": pts,
+                "numero": jugador_num,
+                "total_local": pts_l,
+                "total_visitante": pts_v
+            })
 
             diff = pts_l - pts_v
             if diff > 0:
@@ -365,5 +382,6 @@ def obtener_resumen_partido(db: Session, partido_id: int) -> Dict[str, Any]:
         "estadisticas": {
             "local":     list_stats_local,
             "visitante": list_stats_visitante
-        }
+        },
+        "progresion_puntos": progresion_puntos
     }

@@ -4,6 +4,8 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { Shield, Radio, Clock } from 'lucide-react'
 import { usePartido } from '../hooks/usePartido'
 import AnimatedNumber from '../components/AnimatedNumber'
+import { getResumenPartido } from '../services/api'
+import { pct, calculateTeamTotals, getScoreToInterval } from '../utils/stats'
 
 const MeshBackground = memo(() => (
   <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020202]">
@@ -11,8 +13,6 @@ const MeshBackground = memo(() => (
     <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-red-600/5 rounded-full blur-[80px] will-change-transform" />
   </div>
 ))
-
-const pct = (c, i) => (i > 0 ? ((c / i) * 100).toFixed(1) : '0.0')
 
 const PlayerRow = memo(({ player, stats, colorPrincipal, index }) => {
   const tc_c = (stats.t2_convertidos || 0) + (stats.t3_convertidos || 0)
@@ -98,25 +98,7 @@ const PlayerRow = memo(({ player, stats, colorPrincipal, index }) => {
 
 const TeamTable = memo(({ equipo, jugadores, getStats, puntos, colorAccent, lado }) => {
   const isLeft = lado === 'local'
-
-  const totales = jugadores.reduce((acc, j) => {
-    const s = getStats(j.id)
-    if (s.nj === 1) return acc
-    return {
-      tc_c: acc.tc_c + (s.t2_convertidos || 0) + (s.t3_convertidos || 0),
-      tc_i: acc.tc_i + (s.t2_intentados || 0) + (s.t3_intentados || 0),
-      t2_c: acc.t2_c + (s.t2_convertidos || 0), t2_i: acc.t2_i + (s.t2_intentados || 0),
-      t3_c: acc.t3_c + (s.t3_convertidos || 0), t3_i: acc.t3_i + (s.t3_intentados || 0),
-      tl_c: acc.tl_c + (s.tl_convertidos || 0), tl_i: acc.tl_i + (s.tl_intentados || 0),
-      ro: acc.ro + (s.rebotes_ofensivos || 0), rd: acc.rd + (s.rebotes_defensivos || 0),
-      rt: acc.rt + (s.rebotes_totales || 0), as: acc.as + (s.asistencias || 0),
-      per: acc.per + (s.perdidas || 0), rec: acc.rec + (s.recuperos || 0),
-      bs: acc.bs + (s.bloqueos || 0), ba: acc.ba + (s.bloqueos_recibidos || 0),
-      fc: acc.fc + (s.faltas || 0), fr: acc.fr + (s.faltas_recibidas || 0),
-      mm: acc.mm + (s.mas_menos || 0), ef: acc.ef + Math.round(s.eficiencia || 0),
-      pts: acc.pts + (s.puntos || 0)
-    }
-  }, { tc_c:0,tc_i:0,t2_c:0,t2_i:0,t3_c:0,t3_i:0,tl_c:0,tl_i:0,ro:0,rd:0,rt:0,as:0,per:0,rec:0,bs:0,ba:0,fc:0,fr:0,mm:0,ef:0,pts:0 })
+  const totales = calculateTeamTotals(jugadores, getStats)
 
   return (
     <section className="max-w-[1780px] mx-auto w-full">
@@ -213,26 +195,15 @@ const TeamTable = memo(({ equipo, jugadores, getStats, puntos, colorAccent, lado
   )
 })
 
+
+
 export default function ScoreboardPage() {
   const [searchParams] = useSearchParams()
   const id = searchParams.get('id')
-
-  const { partido, equipoLocal, equipoVisitante, jugadoresLocal, jugadoresVisitante, getStats, parciales } = usePartido(id, {
+  const { partido, equipoLocal, equipoVisitante, jugadoresLocal, jugadoresVisitante, getStats, parciales, stats } = usePartido(id, {
     pollInterval: 3000,
     withParciales: true
   })
-
-  const getScoreToInterval = useMemo(() => (equipoId, q, i) => {
-    let total = 0, hasData = false
-    if (!parciales) return ''
-    parciales.forEach(p => {
-      if (p.cuarto < q || (p.cuarto === q && p.intervalo <= i)) {
-        total += (equipoId === partido.local_id ? p.pts_local : p.pts_visitante)
-        if (p.pts_local > 0 || p.pts_visitante > 0 || (p.cuarto === q && p.intervalo === i)) hasData = true
-      }
-    })
-    return hasData ? total : ''
-  }, [parciales, partido?.local_id, partido?.visitante_id])
 
   if (!partido) return (
     <div className="h-screen bg-[#020202] flex items-center justify-center font-sans relative overflow-hidden text-white uppercase tracking-widest">
@@ -277,9 +248,12 @@ export default function ScoreboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-emerald-500/10 px-4 py-2 border border-emerald-500/20">
-          <Radio size={13} className="text-emerald-500 animate-pulse" />
-          <span className="text-[10px] font-black text-emerald-500 tracking-[0.3em] uppercase">EN VIVO</span>
+        <div className="flex items-center gap-3">
+  // print nav button removed
+          <div className="flex items-center gap-3 bg-emerald-500/10 px-4 py-2 border border-emerald-500/20">
+            <Radio size={13} className="text-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-500 tracking-[0.3em] uppercase">EN VIVO</span>
+          </div>
         </div>
       </header>
 
@@ -288,13 +262,13 @@ export default function ScoreboardPage() {
         <div className="max-w-[1780px] mx-auto flex items-center gap-8 overflow-x-auto">
           <span className="text-[9px] font-black text-white/20 tracking-[0.5em] uppercase flex-shrink-0">Parciales</span>
           <div className="flex items-stretch divide-x divide-white/[0.08]">
-            {[1,2,3,4].map(q => (
+            {[1, 2, 3, 4].map(q => (
               <div key={q} className={`flex flex-col items-center px-6 ${partido.cuarto_actual === q ? 'bg-white/[0.04]' : ''}`}>
                 <span className={`text-[8px] font-black tracking-[0.5em] uppercase mb-1 ${partido.cuarto_actual === q ? 'text-[#0078D4]' : 'text-white/15'}`}>C{q}</span>
                 <div className="flex gap-2 font-black tabular-nums text-[13px]">
-                  <span className={partido.cuarto_actual === q ? 'text-white' : 'text-white/30'}>{getScoreToInterval(partido.local_id, q, 2) || '—'}</span>
+                  <span className={partido.cuarto_actual === q ? 'text-white' : 'text-white/30'}>{getScoreToInterval(partido, parciales, partido.local_id, q, 2) || '—'}</span>
                   <span className="text-white/10">-</span>
-                  <span className={partido.cuarto_actual === q ? 'text-white' : 'text-white/30'}>{getScoreToInterval(partido.visitante_id, q, 2) || '—'}</span>
+                  <span className={partido.cuarto_actual === q ? 'text-white' : 'text-white/30'}>{getScoreToInterval(partido, parciales, partido.visitante_id, q, 2) || '—'}</span>
                 </div>
               </div>
             ))}
@@ -326,6 +300,8 @@ export default function ScoreboardPage() {
         <span>FIBA Stats System</span>
         <span>{partido.estado === 'en_juego' ? '● En juego' : partido.estado === 'finalizado' ? 'Final' : 'Pendiente'}</span>
       </footer>
+
+  // component call removed
     </div>
   )
 }

@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion'
-import { BarChart3, PieChart, TrendingUp, Download, Printer, FileText, Database, ShieldCheck, Activity, Terminal } from 'lucide-react'
+import { useState } from 'react'
+import { FileText, Database, Activity, BarChart3, ShieldCheck, ChevronDown, Loader } from 'lucide-react'
+import { getResumenPartido, getParciales, getEquipo } from '../services/api'
 
 const StatCard = ({ label, value, sub, icon: Icon, color }) => (
     <div className="pro-tool-window p-8 bg-[#121212] flex flex-col gap-6 group hover:border-[#0078D4]/30 transition-all border-white/5 overflow-hidden">
@@ -22,104 +23,84 @@ const StatCard = ({ label, value, sub, icon: Icon, color }) => (
 )
 
 export default function ReportesSection({ equipos, partidos }) {
+    const [partidoSeleccionado, setPartidoSeleccionado] = useState('')
+    const [cargando, setCargando] = useState(false)
+    const [error, setError] = useState(null)
+
     return (
         <div className="flex flex-col gap-8 max-w-[1500px] mx-auto w-full">
 
-            {/* Analytics Module Header */}
+            {/* Header */}
             <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between border-b border-white/5 pb-12 gap-8">
                 <div className="overflow-hidden">
-                    <div className="flex items-center gap-4 mb-4">
-                        <Terminal size={18} className="text-[#0078D4]" />
-                        <span className="text-[10px] font-black text-[#555] uppercase tracking-[0.5em] italic truncate">Métricas_Motor_v3.0.4</span>
-                    </div>
-                    <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black italic tracking-tighter uppercase leading-none truncate">Consola de <span className="text-[#0078D4]">Inteligencia</span></h1>
-                    <p className="text-[#444] text-[11px] font-black tracking-[0.6em] uppercase mt-6 max-w-2xl leading-relaxed">Persistencia de Datos Agregada y Proyección de Rendimiento</p>
+                    <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black italic tracking-tighter uppercase leading-none">
+                        Consola de <span className="text-[#0078D4]">Reportes</span>
+                    </h1>
+                    <p className="text-[#444] text-[11px] font-black tracking-[0.6em] uppercase mt-6">
+                        Planilla Estadística Oficial FIBA
+                    </p>
                 </div>
 
-                <div className="flex gap-4 flex-shrink-0 w-full lg:w-auto">
-                    <button className="control-button h-12 px-8 border-white/10 text-[#555] opacity-40 hover:opacity-100 flex-1 lg:flex-none"><Download size={16} /> EXPORTAR_DATOS_RAW</button>
-                    <button className="control-button control-button-accent h-12 px-8 shadow-2xl flex-1 lg:flex-none"><Printer size={16} /> IMPRIMIR_EXPEDIENTE</button>
+                {/* Panel removido temporalmente hasta reconstrucción */}
+                <div className="pro-tool-window bg-[#121212] border-white/10 p-6 flex flex-col gap-4 w-full lg:w-[360px] flex-shrink-0">
+                    <p className="text-[9px] font-black text-[#555] uppercase tracking-[0.4em]">
+                        MÓDULO DE IMPRESIÓN OFFLINE
+                    </p>
                 </div>
             </div>
 
-            {/* Grid Metrics */}
+            {/* Métricas */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <StatCard label="Total_Nodos" value={equipos.length} sub="+2 ENTIDADES_LOCALES" icon={Database} />
-                <StatCard label="Sesiones_Red" value={partidos.length} sub="99.9% PERSISTENCIA" icon={Activity} color="text-green-500" />
-                <StatCard label="Trafico_Promedio" value="1.2 GB" sub="REALTIME_ESTABLE" icon={BarChart3} color="text-purple-500" />
-                <StatCard label="Handshakes_Seguridad" value="14.2k" sub="AES_256_ACTIVO" icon={ShieldCheck} color="text-amber-500" />
+                <StatCard label="Total_Equipos" value={equipos.length} sub="ENTIDADES REGISTRADAS" icon={Database} />
+                <StatCard label="Partidos_Jugados" value={partidos.length} sub="HISTÓRICO COMPLETO" icon={Activity} color="text-green-500" />
+                <StatCard label="Finalizados" value={partidos.filter(p => p.estado === 'finalizado').length} sub="ESTADO FINAL" icon={BarChart3} color="text-purple-500" />
+                <StatCard label="En_Curso" value={partidos.filter(p => p.estado === 'en_curso').length} sub="LIVE ACTIVOS" icon={ShieldCheck} color="text-amber-500" />
             </div>
 
-            {/* Detailed Analytics Spline Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 pro-tool-window bg-white/[0.01] p-10 min-h-[400px] flex flex-col overflow-hidden">
-                    <div className="flex items-center justify-between mb-12 gap-4">
-                        <div className="flex items-center gap-4 overflow-hidden">
-                            <TrendingUp size={16} className="text-[#0078D4] flex-shrink-0" />
-                            <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#666] truncate">Historial_Carga_Rendimiento_Sistema</h4>
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#0078D4]" />
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#333]" />
-                        </div>
-                    </div>
-
-                    <div className="flex-1 flex items-end gap-1 px-4 min-h-[200px]">
-                        {[40, 60, 45, 90, 65, 30, 85, 40, 50, 60, 75, 55, 95, 40, 60, 80, 45, 50].map((h, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ height: 0 }}
-                                animate={{ height: `${h}%` }}
-                                transition={{ delay: i * 0.02, duration: 1 }}
-                                className="flex-1 bg-gradient-to-t from-[#0078D4]/10 to-[#0078D4]/40 hover:to-[#0078D4] transition-all relative group"
-                            >
-                                <div className="absolute -top-10 left-1/2 -ms-4 bg-black/80 text-[#0078D4] text-[8px] font-bold px-2 py-1 border border-[#0078D4]/30 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                    {h}%
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                    <div className="flex justify-between mt-6 pt-6 border-t border-white/5 text-[9px] font-black text-[#222] uppercase tracking-widest overflow-hidden gap-4">
-                        <span className="truncate">BUFFER_TIEMPO_INIT: 00:00:00</span>
-                        <span className="truncate">SYNC_TIMESTAMP_ACTUAL</span>
-                    </div>
+            {/* Lista de partidos */}
+            <div className="pro-tool-window bg-[#121212] border-white/5 overflow-hidden">
+                <div className="grid-panel-header flex items-center gap-3">
+                    <FileText size={12} className="text-[#0078D4]" />
+                    REGISTRO DE PARTIDOS
                 </div>
-
-                <div className="pro-tool-window bg-[#121212] p-10 flex flex-col overflow-hidden">
-                    <div className="flex items-center gap-4 mb-10 overflow-hidden">
-                        <PieChart size={16} className="text-[#0078D4] flex-shrink-0" />
-                        <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#666] truncate">Ratio_Asignación_Nodos</h4>
-                    </div>
-
-                    <div className="flex-1 flex flex-col gap-6 justify-center">
-                        {[
-                            { label: 'Entidad_Local', val: '58%', color: 'bg-[#0078D4]' },
-                            { label: 'Entidad_Remota', val: '32%', color: 'bg-white/20' },
-                            { label: 'Caché_Bufferizada', val: '10%', color: 'bg-white/5' }
-                        ].map((item, i) => (
-                            <div key={i} className="space-y-3">
-                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest italic overflow-hidden">
-                                    <span className="text-[#555] truncate pr-4">{item.label}</span>
-                                    <span className="text-white flex-shrink-0">{item.val}</span>
+                <div className="divide-y divide-white/5">
+                    {partidos.length === 0 && (
+                        <p className="text-[#444] text-[11px] font-black text-center py-10 uppercase tracking-widest">
+                            Sin partidos registrados
+                        </p>
+                    )}
+                    {partidos.map(p => {
+                        const local = equipos.find(e => e.id === p.local_id)
+                        const vis = equipos.find(e => e.id === p.visitante_id)
+                        return (
+                            <div key={p.id} className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors gap-4">
+                                <div className="flex items-center gap-4 overflow-hidden">
+                                    <span className="text-[9px] font-black text-[#333] uppercase tracking-widest flex-shrink-0">#{p.id}</span>
+                                    <span className="text-[11px] font-black text-white truncate">
+                                        {local?.nombre || 'Local'} vs {vis?.nombre || 'Visitante'}
+                                    </span>
                                 </div>
-                                <div className="h-1.5 w-full bg-black/40 border border-white/5 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: item.val }}
-                                        transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className={`h-full ${item.color}`}
-                                    />
+                                <div className="flex items-center gap-6 flex-shrink-0">
+                                    <span className="text-[14px] font-black font-oswald italic text-[#0078D4]">
+                                        {p.pts_local} — {p.pts_visitante}
+                                    </span>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 ${p.estado === 'finalizado' ? 'text-green-400 bg-green-400/10' :
+                                        p.estado === 'en_curso' ? 'text-amber-400 bg-amber-400/10' :
+                                            'text-[#444] bg-white/5'
+                                        }`}>
+                                        {p.estado}
+                                    </span>
+                                    <span className="control-button h-8 px-4 text-[9px] opacity-50 cursor-not-allowed">
+                                        MÓDULO OFFLINE
+                                    </span>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-
-                    <div className="mt-10 pt-8 border-t border-white/5">
-                        <button className="control-button w-full h-12 text-[10px]"><FileText size={14} /> GENERAR_INFORME_PDF</button>
-                    </div>
+                        )
+                    })}
                 </div>
             </div>
 
+            {/* Módulo removido */}
         </div>
     )
 }

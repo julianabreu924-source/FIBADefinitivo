@@ -12,8 +12,6 @@ import {
 } from '../services/api'
 import ConfirmModal from '../components/ConfirmModal'
 import ReportesSection from '../components/ReportesSection'
-import HistoryControls from '../components/HistoryControls'
-import PrintableReport from '../components/PrintableReport'
 import AnaliticasSection from '../components/AnaliticasSection'
 import { getResumenPartido, getParciales, getEquipo } from '../services/api'
 import { Link } from 'react-router-dom'
@@ -55,9 +53,7 @@ export default function AdminPage() {
   const [fJ, setFJ] = useState({ nombre: '', numero: '', posicion: 'PG', es_titular: false })
   const [fP, setFP] = useState({ local_id: '', visitante_id: '', competicion: '', cancha: '', arbitro_principal: '', arbitro_asistente1: '', arbitro_asistente2: '' })
 
-  // Estado para impresión
-  const [printData, setPrintData] = useState(null)
-  const [isPrinting, setIsPrinting] = useState(false)
+  // Estado para impresión eliminado
 
   const cargarEquipos = async () => { try { const r = await getEquipos(); setEquipos(r.data) } catch (err) { console.error(err) } }
   const cargarPartidos = async () => { try { const r = await getPartidos(); setPartidos(r.data) } catch (err) { console.error(err) } }
@@ -110,37 +106,7 @@ export default function AdminPage() {
     onConfirm: async () => { try { await eliminarPartido(pid); cargarPartidos(); flash('Sesión terminada.') } catch (e) { flash('Error.') } }
   })
 
-  const handleImprimirPartido = async (p) => {
-    try {
-      flash('Preparando documento maestro...')
-      const [resumen, parciales, loc, vis] = await Promise.all([
-        getResumenPartido(p.id),
-        getParciales(p.id),
-        getEquipo(p.local_id),
-        getEquipo(p.visitante_id)
-      ])
-
-      setPrintData({
-        partido: p,
-        resumen: resumen.data,
-        parciales: parciales.data,
-        equipoLocal: loc.data,
-        equipoVisitante: vis.data
-      })
-
-      setIsPrinting(true)
-
-      // Pequeño delay aumentado para asegurar que el DOM de impresión y sus tablas se rendericen
-      setTimeout(() => {
-        window.print()
-        setIsPrinting(false)
-        setPrintData(null)
-      }, 1000)
-    } catch (e) {
-      console.error(e)
-      flash('Error al generar reporte.')
-    }
-  }
+  // print handle removed
 
   return (
     <div className="flex flex-col h-screen w-full bg-[#0a0a0a] text-white overflow-hidden">
@@ -460,7 +426,7 @@ export default function AdminPage() {
 
                               <div className="space-y-1">
                                 <h4 className="text-xl font-black italic uppercase tracking-tight text-white group-hover:text-[#0078D4] transition-colors">
-                                  {p.local_nombre} <span className="text-[#222] italic mx-1">vs</span> {p.visitante_nombre}
+                                  {p.equipo_local?.nombre || `LOCAL`} <span className="text-[#222] italic mx-1">vs</span> {p.equipo_visitante?.nombre || `VISITANTE`}
                                 </h4>
                                 <div className="flex items-center gap-8">
                                   <div className="flex flex-col">
@@ -486,8 +452,17 @@ export default function AdminPage() {
                               <Link to={`/public-scoreboard?id=${p.id}`} className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-red-500 hover:text-red-400 group/pub shadow-lg" target="_blank" title="Scoreboard Público">
                                 <Radio size={16} className="group-hover/pub:scale-110 transition-transform" />
                               </Link>
-                              <button onClick={() => handleImprimirPartido(p)} className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#0078D4]/20 hover:text-[#0078D4] transition-all text-[#444] group/print shadow-lg" title="Imprimir Hoja de Anotación Oficial">
-                                <Printer size={16} className="group-hover/print:scale-110 transition-transform" />
+                              <button
+                                onClick={() => {
+                                  const url = `/#/acta?id=${p.id}`;
+                                  // Open a popup window with specific dims correctly resolved
+                                  window.open(url, 'FIBA_Print', 'width=1100,height=850,menubar=no,toolbar=no,scrollbars=yes');
+                                  flash('Abriendo vista previa del sistema...');
+                                }}
+                                className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-blue-400 hover:text-blue-300 group/prt shadow-lg"
+                                title="Imprimir Acta De Partido"
+                              >
+                                <Printer size={16} className="group-hover/prt:scale-110 transition-transform" />
                               </button>
                               <button onClick={() => handleBorrarPartido(p.id)} className="w-11 h-11 flex items-center justify-center text-[#222] hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 group/del shadow-lg">
                                 <Trash2 size={16} className="group-hover/del:scale-110 transition-transform" />
@@ -524,6 +499,7 @@ export default function AdminPage() {
 
           </AnimatePresence>
         </div>
+
 
         {/* Capa de Estado Global */}
         <footer className="status-bar px-10 h-8 flex items-center overflow-hidden">
@@ -562,18 +538,6 @@ export default function AdminPage() {
         msg={modal.msg}
       />
 
-      {/* CONTENEDOR DE IMPRESIÓN (OCULTO EN PANTALLA, VISIBLE EN PRINT) */}
-      {isPrinting && printData && (
-        <div id="print-container" className="hidden print:block fixed inset-0 bg-white z-[99999]">
-          <PrintableReport
-            partido={printData.partido}
-            resumen={printData.resumen}
-            parciales={printData.parciales}
-            equipoLocal={printData.equipoLocal}
-            equipoVisitante={printData.equipoVisitante}
-          />
-        </div>
-      )}
     </div>
   )
 }

@@ -19,6 +19,9 @@ class EquipoMin(BaseModel):
     nombre: str
     abrev: Optional[str]
     color_principal: Optional[str]
+    entrenador: Optional[str] = None
+    asistente1: Optional[str] = None
+    asistente2: Optional[str] = None
 
     class Config:
         from_attributes = True

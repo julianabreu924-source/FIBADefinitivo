@@ -8,6 +8,7 @@ import ReportesPage from './pages/ReportesPage'
 import PublicScoreboardPage from './pages/PublicScoreboardPage'
 import LoginPage from './pages/LoginPage'
 import SplashScreen from './components/SplashScreen'
+import PrintableActaPage from './pages/PrintableActaPage'
 
 // Helper component to safeguard admin routes
 const ProtectedRoute = ({ children }) => {
@@ -53,6 +54,11 @@ export default function App() {
       {/* Technical Summaries (Protected) */}
       <Route path="/resumen/:id" element={
         <ProtectedRoute><HistorialPage /></ProtectedRoute>
+      } />
+
+      {/* Printable Protocol Page */}
+      <Route path="/acta" element={
+        <ProtectedRoute><PrintableActaPage /></ProtectedRoute>
       } />
 
       {/* Analytics Hub (Protected) */}

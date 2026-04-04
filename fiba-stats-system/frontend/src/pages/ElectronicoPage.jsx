@@ -101,21 +101,25 @@ export default function ElectronicoPage() {
     const p1 = parciales.find(p => p.cuarto === q && p.intervalo === 1)
     const p2 = parciales.find(p => p.cuarto === q && p.intervalo === 2)
 
-    // Calculamos los puntos del parcial (puntos actuales - suma de parciales previos)
-    const sumaPreviosLocal = parciales.reduce((acc, p) => acc + (p.pts_local || 0), 0)
-    const sumaPreviosVis = parciales.reduce((acc, p) => acc + (p.pts_visitante || 0), 0)
+    // Suma de puntos de cuartos ANTERIORES (no incluir el cuarto actual)
+    const parcialesPrevios = parciales.filter(p => p.cuarto < q)
+    const sumaPreviosLocal = parcialesPrevios.reduce((acc, p) => acc + (p.pts_local || 0), 0)
+    const sumaPreviosVis = parcialesPrevios.reduce((acc, p) => acc + (p.pts_visitante || 0), 0)
 
-    const ptsLocalParcial = partido.pts_local - sumaPreviosLocal
-    const ptsVisParcial = partido.pts_visitante - sumaPreviosVis
+    // Puntos anotados en el cuarto actual (total del partido menos lo de cuartos anteriores)
+    const ptsCuartoLocal = partido.pts_local - sumaPreviosLocal
+    const ptsCuartoVis = partido.pts_visitante - sumaPreviosVis
 
     try {
       if (!p1) {
-        // Guardar intervalo 1 (5 min)
-        await guardarParcial(partidoId, { cuarto: q, intervalo: 1, pts_local: ptsLocalParcial, pts_visitante: ptsVisParcial })
+        // Guardar intervalo 1 (primeros 5 min del cuarto): puntos del cuarto hasta ahora
+        await guardarParcial(partidoId, { cuarto: q, intervalo: 1, pts_local: ptsCuartoLocal, pts_visitante: ptsCuartoVis })
         flash(`INTERVALO C${q}-5M REGISTRADO`, '#0078D4')
       } else if (!p2) {
-        // Guardar intervalo 2 (Final de cuarto) y avanzar
-        await guardarParcial(partidoId, { cuarto: q, intervalo: 2, pts_local: ptsLocalParcial, pts_visitante: ptsVisParcial })
+        // Guardar intervalo 2 (final del cuarto): puntos anotados desde intervalo 1
+        const ptsIntervalo2Local = ptsCuartoLocal - (p1.pts_local || 0)
+        const ptsIntervalo2Vis = ptsCuartoVis - (p1.pts_visitante || 0)
+        await guardarParcial(partidoId, { cuarto: q, intervalo: 2, pts_local: ptsIntervalo2Local, pts_visitante: ptsIntervalo2Vis })
         if (q < 4) {
           await avanzarCuarto(partidoId)
           await handleSetReloj(600) // Reset clock to 10:00 for new quarter
