@@ -10,8 +10,9 @@ services:
     name: fiba-backend
     runtime: docker
     plan: free
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    rootDir: fiba-stats-system/backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -29,8 +30,9 @@ services:
     name: fiba-frontend
     runtime: docker
     plan: free
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend
+    rootDir: fiba-stats-system/frontend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: VITE_API_URL
         fromService:
