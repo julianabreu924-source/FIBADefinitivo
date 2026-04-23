@@ -361,7 +361,13 @@ export default function ElectronicoPage() {
 
           {/* Acciones de Control Maestro */}
           <div className="flex gap-2 w-full px-4">
-            {partido.estado !== 'en_juego' ? (
+            {partido.estado === 'finalizado' ? (
+              <div
+                className="w-full h-10 bg-[#f43f5e]/20 border border-[#f43f5e]/40 text-[#f43f5e] text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-[0_5px_15px_rgba(244,63,94,0.1)] cursor-not-allowed"
+              >
+                <Shield size={12} fill="currentColor" /> PARTIDO FINALIZADO
+              </div>
+            ) : partido.estado !== 'en_juego' ? (
               <button
                 onClick={handleIniciar}
                 className="w-full h-10 bg-[#2ea043] border border-[#2ea043]/40 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#3fb950] transition-all flex items-center justify-center gap-2 shadow-[0_5px_15px_rgba(46,160,67,0.2)]"
@@ -372,11 +378,18 @@ export default function ElectronicoPage() {
               <>
                 <button
                   onClick={handleAvanzarIntervalo}
-                  className="flex-1 h-10 bg-[#0078D4] border border-[#0078D4]/50 text-white text-[9px] font-black uppercase tracking-[0.15em] hover:bg-[#0086F0] transition-all shadow-[0_5px_15px_rgba(0,120,212,0.3)] flex items-center justify-center text-center px-2"
+                  className={`flex-1 h-10 border text-white text-[9px] font-black uppercase tracking-[0.15em] transition-all shadow-[0_5px_15px_rgba(0,120,212,0.3)] flex items-center justify-center text-center px-2 ${parciales.find(p => p.cuarto === partido.cuarto_actual && p.intervalo === 1) && partido.cuarto_actual >= 4 && partido.pts_local !== partido.pts_visitante
+                      ? 'bg-[#f43f5e] border-[#f43f5e]/50 hover:bg-[#e11d48] shadow-[0_5px_15px_rgba(244,63,94,0.3)]'
+                      : 'bg-[#0078D4] border-[#0078D4]/50 hover:bg-[#0086F0]'
+                    }`}
                 >
                   {!parciales.find(p => p.cuarto === partido.cuarto_actual && p.intervalo === 1)
                     ? `GUARDAR PUNTOS @5:00`
-                    : `CERRAR CUARTO ${partido.cuarto_actual}`
+                    : (partido.cuarto_actual >= 4 && partido.pts_local !== partido.pts_visitante)
+                      ? 'FINALIZAR PARTIDO'
+                      : (partido.cuarto_actual >= 4 && partido.pts_local === partido.pts_visitante)
+                        ? 'IR A PRÓRROGA'
+                        : `CERRAR CUARTO ${partido.cuarto_actual}`
                   }
                 </button>
                 <button
