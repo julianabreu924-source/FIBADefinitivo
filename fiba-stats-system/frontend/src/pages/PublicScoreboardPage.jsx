@@ -55,8 +55,8 @@ const CenterHUD = memo(({ partido }) => {
           </div>
         )}
         {isFinal && (
-          <div className="flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 px-4 py-1.5 rounded-full">
-            <span className="text-[10px] font-black tracking-[0.3em] text-amber-400 uppercase">FINAL</span>
+          <div className="flex items-center gap-2 bg-[#f43f5e]/15 border border-[#f43f5e]/30 px-5 py-2 rounded-full mb-2">
+            <span className="text-[11px] font-black tracking-[0.4em] text-[#f43f5e] uppercase">FINALIZADO</span>
           </div>
         )}
         {!isLive && !isFinal && (
@@ -194,7 +194,7 @@ export default function PublicScoreboardPage() {
         <span className="text-[8px] font-black tracking-[0.5em] text-white/10 uppercase">FIBA Stats System</span>
         {partido.cancha && <span className="text-[8px] font-black tracking-[0.4em] text-white/10 uppercase">{partido.cancha}</span>}
         <span className="text-[8px] font-black tracking-[0.5em] text-white/10 uppercase">
-          {partido.estado === 'en_juego' ? '● En juego' : partido.estado === 'finalizado' ? 'Final' : 'Pendiente'}
+          {partido.estado === 'en_juego' ? '● En juego' : partido.estado === 'finalizado' ? 'Finalizado' : 'Pendiente'}
         </span>
       </footer>
     </div>
