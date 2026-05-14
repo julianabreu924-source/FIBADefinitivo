@@ -10,7 +10,7 @@ export default function ConnectionBadge() {
             const apiUrl = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000/api' : '/api');
             try {
                 // Ping simple al root del API
-                await axios.get(apiUrl.replace('/api', '/'), { timeout: 5000 });
+                await axios.get(apiUrl.replace('/api', '/'), { timeout: 15000 });
                 setStatus('online');
             } catch (err) {
                 setStatus('offline');
@@ -18,7 +18,7 @@ export default function ConnectionBadge() {
         };
 
         checkConnection();
-        const interval = setInterval(checkConnection, 30000); // Re-check cada 30s
+        const interval = setInterval(checkConnection, 60000); // Re-check cada 60s para no saturar el pool de conexiones
 
         return () => clearInterval(interval);
     }, []);

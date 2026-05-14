@@ -9,43 +9,62 @@ export default function SplashScreen({ onComplete }) {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
+        let isMounted = true;
+
         // 1. Despertar el backend (Warm-up)
         const wakeUpBackend = async () => {
-            const apiUrl = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000/api' : '/api');
+            const apiUrl = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8001/api' : '/api');
             try {
                 // Hacemos múltiples pings para despertar backend y DB (Postgres en Render)
                 await Promise.all([
-                    axios.get(apiUrl.replace('/api', '/'), { timeout: 15000 }),
-                    axios.get(`${apiUrl}/stats/global`, { timeout: 15000 })
+                    axios.get(apiUrl.replace('/api', '/'), { timeout: 45000 }),
+                    axios.get(`${apiUrl}/stats/global`, { timeout: 45000 })
                 ]);
                 console.log("Backend y Base de Datos despertados exitosamente");
+                if (isMounted) setProgress(100);
             } catch (err) {
-                console.log("Backend despertando progresivamente...");
+                console.log("Backend despertando progresivamente o tardando más de lo esperado...");
             }
         };
 
-        wakeUpBackend();
+        const startLogic = async () => {
+            // Iniciar despertar backend
+            const wakePromise = wakeUpBackend();
+            
+            // Iniciar simulador de progreso
+            const interval = setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 90) { // Nos quedamos en 90% hasta que el backend responda o pase el tiempo
+                        return prev;
+                    }
+                    return prev + 1;
+                });
+            }, 50);
 
-        // 2. Simular progreso de carga (Visual)
-        const interval = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 100) {
-                    clearInterval(interval);
-                    return 100;
-                }
-                return prev + 1;
-            });
-        }, 30);
+            // Esperar al backend O un tiempo máximo razonable (30s)
+            await Promise.race([
+                wakePromise,
+                new Promise(resolve => setTimeout(resolve, 30000))
+            ]);
 
-        // 3. Finalizar Splash
-        const timer = setTimeout(() => {
-            setIsFinishing(true);
-            setTimeout(onComplete, 1200);
-        }, 4500); // Aumentamos ligeramente el tiempo para dar margen al backend
+            if (isMounted) {
+                clearInterval(interval);
+                setProgress(100);
+                
+                // Dar un momento para ver el 100%
+                setTimeout(() => {
+                    if (isMounted) {
+                        setIsFinishing(true);
+                        setTimeout(onComplete, 1000);
+                    }
+                }, 800);
+            }
+        };
+
+        startLogic();
 
         return () => {
-            clearInterval(interval);
-            clearTimeout(timer);
+            isMounted = false;
         };
     }, [onComplete]);
 

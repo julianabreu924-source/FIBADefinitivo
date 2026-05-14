@@ -16,7 +16,7 @@ const getBaseURL = () => {
 const api = axios.create({
   baseURL: getBaseURL(),
   headers: { 'Content-Type': 'application/json' },
-  timeout: 25000 // 25s para dar tiempo de sobra al cold-start de Render
+  timeout: 60000 // 60s para dar tiempo de sobra al cold-start de Render/Railway
 })
 
 // Intercept requests to add authentication token
@@ -28,18 +28,26 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Auto-retry once for GET requests that fail (useful for cold starts)
+// Auto-retry for GET requests that fail (useful for cold starts)
 api.interceptors.response.use(null, async (error) => {
   const { config, response } = error;
-  if (!config || config.method !== 'get' || config.__isRetry) {
+  
+  // Limitar reintentos (max 2)
+  config.__retryCount = config.__retryCount || 0;
+  
+  if (!config || config.method !== 'get' || config.__retryCount >= 2) {
     return Promise.reject(error);
   }
   
-  // Only retry on network errors or 503/504 (typical for sleeping servers)
+  // Reintentar si no hay respuesta (timeout) o error de servidor
   if (!response || response.status >= 500) {
-    config.__isRetry = true;
-    console.log("Servidor dormido o lento, reintentando peticion...");
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    config.__retryCount += 1;
+    console.log(`Servidor dormido o lento, reintentando peticion (intento ${config.__retryCount})...`);
+    
+    // Espera exponencial corta
+    const delay = config.__retryCount * 2000;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
     return api(config);
   }
   

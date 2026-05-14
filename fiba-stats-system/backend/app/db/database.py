@@ -14,7 +14,11 @@ if db_url.startswith("sqlite"):
 
 engine = create_engine(
     db_url,
-    connect_args=connect_args
+    connect_args=connect_args,
+    pool_size=20,           # Aumentamos el pool de conexiones
+    max_overflow=10,        # Permitimos más desbordamiento
+    pool_timeout=30,        # Tiempo de espera para obtener una conexión
+    pool_recycle=1800,      # Reciclar conexiones cada 30 min para evitar desconexiones de Render/Postgres
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
